@@ -20,6 +20,7 @@ namespace Definit.Common.Server.OData
         {
             base.MaxNodeCount = int.MaxValue;
             base.EnsureStableOrdering = false;
+            base.MaxAnyAllExpressionDepth = 5;
         }
 
         /// <summary>
