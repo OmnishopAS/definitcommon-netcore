@@ -37,8 +37,12 @@ namespace Definit.Common.Server.ApiDoc
 
         public void WriteEntities(StringBuilder sb)
         {
-            sb.AppendLine("import { Enums } from './enums';");
-            //sb.AppendLine("import { SqlTypes } from './sqltypes';");
+            var namespaces = GetNameSpacesForCustomProperties(_entityModel.GetEntityTypes());
+            namespaces.Add("Enums");
+            foreach (var ns in namespaces)
+            {
+                sb.AppendLine("import { " + ns + " } from './" + ns.ToLower() + "';");
+            }
             sb.AppendLine();
             sb.AppendLine("declare namespace Entities {");
             foreach (var entityType in _entityModel.GetEntityTypes())
@@ -82,15 +86,39 @@ namespace Definit.Common.Server.ApiDoc
 
         public void WriteDataTransferObjects(StringBuilder sb)
         {
-            sb.AppendLine("import { Enums } from './enums';");
-            //sb.AppendLine("import { SqlTypes } from './sqltypes';");
+            var namespaces = GetNameSpacesForCustomProperties(_dtoTypes);
+            namespaces.Add("Enums");
+            namespaces.Add("Entities");
+            foreach (var ns in namespaces)
+            {
+                sb.AppendLine("import { " + ns + " } from './" + ns.ToLower() + "';");
+            }
             sb.AppendLine();
             sb.AppendLine("declare namespace DTOs {");
+
             foreach (var dtoType in _dtoTypes)
             {
                 WriteInterface(sb, dtoType);
             }
             sb.AppendLine("}");
+        }
+
+        private HashSet<string> GetNameSpacesForCustomProperties(IEnumerable<Type> ownerTypes)
+        {
+            var namespaces = new HashSet<string>();
+            foreach (var propType in ownerTypes.SelectMany(x => x.GetProperties()).Select(x => x.PropertyType).Distinct())
+            {
+                if (_customTypes.ContainsKey(propType))
+                {
+                    var customTypeNamespace = _customTypes[propType];
+                    if (!namespaces.Contains(customTypeNamespace))
+                    {
+                        namespaces.Add(customTypeNamespace);
+                    }
+                }
+            }
+
+            return namespaces;
         }
 
         public void WriteMetadata(StringBuilder sb)
