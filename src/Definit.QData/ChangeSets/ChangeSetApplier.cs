@@ -15,6 +15,10 @@ namespace Definit.QData.ChangeSets
         readonly IChangeSetContext _repoContext;
         readonly IQDataEntityModel _entityModel;
 
+        readonly Dictionary<ChangeSetEntry, object> _appliedChangeSetEntries = new Dictionary<ChangeSetEntry, object>();
+
+        public Dictionary<ChangeSetEntry, object> AppliedChangeSetEntries { get { return _appliedChangeSetEntries; } }
+
         public ChangeSetApplier(IChangeSetContext repoContext, IQDataEntityModel entityModel)
         {
             _repoContext = repoContext;
@@ -56,6 +60,7 @@ namespace Definit.QData.ChangeSets
         /// <param name="entity">The entity whose properties will be updated</param>
         private void ApplyChangeSetEntry(ChangeSetEntry entry, object entity)
         {
+            _appliedChangeSetEntries.Add(entry, entity);
             PropertyInfo[] properties = entity.GetType().GetProperties();
             var entityKeys = _entityModel.GetKeysForEntity(entity.GetType());
 
