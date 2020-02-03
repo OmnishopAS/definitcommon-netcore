@@ -3,7 +3,7 @@ using System.Data.SqlClient;
 
 namespace Definit.Common.DAL
 {
-    public class DatabaseUtils
+    public class MigrationUtilities
     {
         public static string GetLatestDatabaseMigrationSafe(string connectionString)
         {
