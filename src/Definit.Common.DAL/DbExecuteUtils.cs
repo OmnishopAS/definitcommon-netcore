@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
 using System.Data.SqlClient;
 using System.Text;
@@ -37,6 +38,26 @@ namespace Definit.Common.DAL
                     }
                 }
 
+            }
+            finally
+            {
+                connection.Close();
+            }
+        }
+
+        public static DataTable GetDataTable(DbConnection connection, string sql)
+        {
+            connection.Open();
+            try
+            {
+                using (var command = (SqlCommand)connection.CreateCommand())
+                {
+                    command.CommandText = sql;
+                    var dt = new DataTable();
+                    var da = new SqlDataAdapter(command);
+                    da.Fill(dt);
+                    return dt;
+                }
             }
             finally
             {
