@@ -12,7 +12,7 @@ namespace Omnishop.Common.Server
 
         }
 
-        public Task BindModelAsync(ModelBindingContext bindingContext)
+        public async Task BindModelAsync(ModelBindingContext bindingContext)
         {
             if (bindingContext == null)
             {
@@ -26,14 +26,14 @@ namespace Omnishop.Common.Server
             {
                 using (var reader = new StreamReader(bindingContext.HttpContext.Request.Body))
                 {
-                    var body = reader.ReadToEnd();
+                    var body = await reader.ReadToEndAsync();
                     bindingContext.Result = ModelBindingResult.Success(body);
-                    return Task.CompletedTask;
+                    return;
                 }
             }
 
             bindingContext.ModelState.TryAddModelError(modelName, "Unknown target type. This should not happen.");
-            return Task.CompletedTask;
+            return;
         }
     }
 }
