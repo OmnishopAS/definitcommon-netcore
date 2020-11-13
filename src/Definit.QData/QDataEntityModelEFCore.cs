@@ -122,9 +122,11 @@ namespace Definit.QData.AspNetCore
 
             foreach(var navProperty in entType.GetNavigations())
             {
-                var entName = navProperty.GetTargetType().ClrType.Name;
-                if (navProperty.IsCollection())
+                var entName = navProperty.TargetEntityType.ClrType.Name;
+                if (navProperty.IsCollection)
+                {
                     entName += "[]";
+                }
 
                 var navEntityInfo = new EntityNavigationPropertyInfo()
                 {
