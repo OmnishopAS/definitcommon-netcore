@@ -7,6 +7,7 @@ using System.ServiceProcess;
 
 namespace Omnishop.Common.Server
 {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "Platform specific")]
     public class ServerWindowsService : WebHostService
     {
         readonly IWebHost _webHost;
