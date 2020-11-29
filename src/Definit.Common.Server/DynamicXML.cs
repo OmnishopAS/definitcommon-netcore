@@ -5,7 +5,7 @@ using System.Dynamic;
 using System.Xml.Linq;
 using System.Collections;
 
-namespace Omnishop.Common.Server
+namespace Definit.Common.Server
 {
     /// <summary>
     /// http://blogs.msdn.com/b/mcsuksoldev/archive/2010/02/04/dynamic-xml-reader-with-c-and-net-4-0.aspx

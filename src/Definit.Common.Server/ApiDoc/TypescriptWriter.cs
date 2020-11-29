@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -293,16 +294,26 @@ namespace Definit.Common.Server.ApiDoc
                 return "Entities." + clrType.Name;
             }
 
-            var ien = clrType
-             .GetInterfaces()
-             .SingleOrDefault(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IEnumerable<>));
-
-            if(ien != null)
+            Type typeIEnumerableGeneric;
+            if(clrType.IsGenericType && clrType.GetGenericTypeDefinition()==typeof(IEnumerable<>))
             {
-                var genericType = ien.GetGenericArguments()[0];
+                typeIEnumerableGeneric = clrType;
+            }
+            else
+            {
+                typeIEnumerableGeneric = clrType
+                    .GetInterfaces()
+                    .SingleOrDefault(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IEnumerable<>));
+            }
+
+            if(typeIEnumerableGeneric != null)
+            {
+                var genericType = typeIEnumerableGeneric.GetGenericArguments()[0];
                 var translatedGenericType = TranslatePropertyType(genericType);
                 return translatedGenericType + "[]";
             }
+
+
             return "any";
         }
 
