@@ -10,7 +10,7 @@
     
   <ItemGroup>
     <PackageReference Include="System.Security.Principal" Version="4.3.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Hosting.WindowsServices" Version="5.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Hosting.WindowsServices" Version="5.0.1" />
     <PackageReference Include="Microsoft.AspNetCore.OData" Version="7.5.2" />
     <PackageReference Include="NLog" Version="5.0.0-beta07" />
   </ItemGroup>
