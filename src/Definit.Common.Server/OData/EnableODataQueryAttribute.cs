@@ -9,13 +9,11 @@ using Microsoft.OData.Edm;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq.Expressions;
-using System.Reflection;
 
 namespace Definit.Common.Server.OData
 {
     public class EnableODataQueryAttribute : EnableQueryAttribute
     {
-
         public EnableODataQueryAttribute()
         {
             base.MaxNodeCount = int.MaxValue;

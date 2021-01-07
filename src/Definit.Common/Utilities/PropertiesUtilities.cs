@@ -66,10 +66,12 @@ namespace Definit.Common
         {
             if (value == null)
             {
-                if (destType.IsValueType)
-                    return Activator.CreateInstance(destType);            //Creates default value (usually 0) for destType
-                else
-                    return null;
+                return CreateDefaultInstance(destType);
+            }
+
+            if (value.GetType()==typeof(string) && string.IsNullOrEmpty(value.ToString()) && destType != typeof(string))
+            {
+                return CreateDefaultInstance(destType);
             }
 
             var sourceType = value.GetType();
@@ -87,6 +89,14 @@ namespace Definit.Common
             if (destType.IsGenericType && (destType.GetGenericTypeDefinition() == typeof(Nullable<>)))
                 checkedType = destType.GenericTypeArguments[0];
             return Convert.ChangeType(value, checkedType);
+        }
+
+        private static object CreateDefaultInstance(Type destType)
+        {
+            if (destType.IsValueType)
+                return Activator.CreateInstance(destType);            //Creates default value (usually 0) for destType
+            else
+                return null;
         }
     }
 }

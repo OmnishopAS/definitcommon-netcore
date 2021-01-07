@@ -1,5 +1,4 @@
-﻿using Definit.QData.AspNetCore;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using System.Text;
 
 namespace Definit.Common.Server.ApiDoc
