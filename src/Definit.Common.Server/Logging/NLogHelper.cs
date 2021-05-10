@@ -1,6 +1,7 @@
 ﻿using NLog;
 using System;
 using System.IO;
+using System.Reflection;
 
 namespace Definit.Common.Server.Logging
 {
@@ -9,12 +10,13 @@ namespace Definit.Common.Server.Logging
 
         public static void ConfigureNLog(string dataFolder, string logFileNameBase)
         {
-            var appEnv = Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application;
+            //var appEnv = Microsoft.Extensions.PlatformAbstractions.PlatformServices.Default.Application;
+            var appPath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
 
             //Try to load nlog.config, fail silently and use default config if file does not exist or parsing fails.
             try
             {
-                var configFileName = Path.Combine(appEnv.ApplicationBasePath, "nlog.config");
+                var configFileName = Path.Combine(appPath, "nlog.config");
                 if (File.Exists(configFileName))
                 {
                     NLog.LogManager.Configuration = new NLog.Config.XmlLoggingConfiguration(configFileName);
