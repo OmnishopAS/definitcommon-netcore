@@ -25,6 +25,11 @@ namespace Definit.Common
             _timer.Change(_debounceTime, Timeout.InfiniteTimeSpan);
         }
 
+        public void HandleEvent(object sender, EventArgs eventArgs)
+        {
+            HandleEvent();
+        }
+
         private void TimerCallback(object state)
         {
             //Stop timer, will be started when action is received
