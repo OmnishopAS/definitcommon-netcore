@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.AspNetCore.Hosting.WindowsServices;
 using System.ServiceProcess;
 
-namespace Omnishop.Common.Server
+namespace Definit.Common.Server
 {
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility", Justification = "Platform specific")]
     public class ServerWindowsService : WebHostService

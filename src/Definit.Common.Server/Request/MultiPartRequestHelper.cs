@@ -3,7 +3,7 @@ using System.IO;
 using Microsoft.Net.Http.Headers;
 using Microsoft.Extensions.Primitives;
 
-namespace Omnishop.Common.Server
+namespace Definit.Common.Server.Request
 {
     public static class MultipartRequestHelper
     {

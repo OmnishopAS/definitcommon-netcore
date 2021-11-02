@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Omnishop.POS.Services.Infrastructure
+namespace Definit.Common.Server.Response
 {
     /// <summary>
     /// Will delete file after content has been read (downloaded)

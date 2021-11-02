@@ -7,9 +7,6 @@ using Microsoft.OData.UriParser;
 
 namespace Definit.Common.Server.OData
 {
-
-
-
     /// <summary>
     /// Based on  odata.net/src/Microsoft.OData.Core/UriParser/Resolver/StringAsEnumResolver.cs
     /// Modified to support numeric/non-string values for Enums

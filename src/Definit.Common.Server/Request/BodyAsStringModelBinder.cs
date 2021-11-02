@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
-namespace Omnishop.Common.Server
+namespace Definit.Common.Server.Request
 {
     public class BodyAsStringModelBinder : IModelBinder
     {
