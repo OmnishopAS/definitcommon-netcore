@@ -11,7 +11,6 @@ namespace Definit.Common.Server.Middleware
     public class UrlAuthorizeMiddleware 
     {
         private readonly ILogger _logger;
-        private readonly string _matchUrl;
         private readonly Func<HttpContext, Task<bool>> _authorizeAction;
         private readonly RequestDelegate _next;
         private readonly RouteMatcher _routeMatcher;
