@@ -26,6 +26,13 @@ namespace Definit.Common.Server.Request
             return isMatch;
         }
 
+        public bool Match(PathString requestPath, out RouteValueDictionary routeValues)
+        {
+            routeValues = new RouteValueDictionary();
+            var isMatch = _templateMatcher.TryMatch(requestPath, routeValues);
+            return isMatch;
+        }
+
         public static bool Match(string routeTemplate, PathString requestPath)
         {
             return new RouteMatcher(routeTemplate).Match(requestPath);

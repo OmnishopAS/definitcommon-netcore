@@ -229,18 +229,4 @@ namespace Definit.Common.Server.Middleware
         public PathString StaticFilesRootPath { get; set; }
         public string RequiredRole { get; set; }
     }
-
-    public class PosApplicationFilesMiddleware : ApplicationFilesMiddleware
-    {
-        public PosApplicationFilesMiddleware(RequestDelegate next, IWebHostEnvironment hostingEnv, IOptions<ApplicationFilesOptions> options) 
-            : base(next, hostingEnv, options)
-        {
-        }
-
-        protected override string GetNewBaseHRef(HttpContext context)
-        {
-            var clientId = (short)context.Request.RouteValues["clientId"];
-            return $"/pos/client/{clientId}" + _matchUrl;
-        }
-    }
 }
