@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Definit.Common.Server.Request;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Logging;
 
 namespace Definit.Common.Server.Middleware
@@ -11,7 +12,7 @@ namespace Definit.Common.Server.Middleware
     public class UrlAuthorizeMiddleware 
     {
         private readonly ILogger _logger;
-        private readonly Func<HttpContext, Task<bool>> _authorizeAction;
+        private readonly Func<HttpContext, RouteValueDictionary, Task<bool>> _authorizeAction;
         private readonly RequestDelegate _next;
         private readonly RouteMatcher _routeMatcher;
 
@@ -25,7 +26,7 @@ namespace Definit.Common.Server.Middleware
 
         public async Task Invoke(HttpContext context)
         {
-            if(!_routeMatcher.Match(context.Request.Path))
+            if(!_routeMatcher.Match(context.Request.Path, out var routeValues))
             {
                 await _next(context);
                 return;
@@ -50,7 +51,7 @@ namespace Definit.Common.Server.Middleware
             var shouldContinueWithNext = true;
             if(_authorizeAction!=null)
             {
-                shouldContinueWithNext = await _authorizeAction(context);
+                shouldContinueWithNext = await _authorizeAction(context, routeValues);
             }
 
             if(shouldContinueWithNext)
@@ -65,7 +66,7 @@ namespace Definit.Common.Server.Middleware
         public string RequestPath { get; set; }
 
         //Action that returns true if middleware pipeline should continue execution, false to end execution
-        public Func<HttpContext, Task<bool>> AuthorizeAction { get; set; }
+        public Func<HttpContext, RouteValueDictionary, Task<bool>> AuthorizeAction { get; set; }
     }
 
     public static class UrlAuthorizeMiddlewareExtensions
@@ -75,7 +76,7 @@ namespace Definit.Common.Server.Middleware
             return app.UseMiddleware<UrlAuthorizeMiddleware>(options);
         }
 
-        public static IApplicationBuilder UseUrlAuthorizeMiddleware(this IApplicationBuilder app, string requestPath, Func<HttpContext, Task<bool>> authorizeAction)
+        public static IApplicationBuilder UseUrlAuthorizeMiddleware(this IApplicationBuilder app, string requestPath, Func<HttpContext, RouteValueDictionary, Task<bool>> authorizeAction)
         {
             return app.UseUrlAuthorizeMiddleware(new UrlAuthorizeOptions()
             {
