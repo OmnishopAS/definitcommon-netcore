@@ -45,7 +45,7 @@ namespace Definit.Common.Server.Middleware
 
             _next = next ?? throw new ArgumentNullException(nameof(next));
             var optionsValue = options.Value;
-            _applicationFile = optionsValue.ApplicationFile;
+            _applicationFile = optionsValue.ApplicationFile.ToLower();
             _fileProvider = optionsValue.FileProvider ?? Helpers.ResolveFileProvider(hostingEnv);
             _matchUrl = optionsValue.RequestPath;
             _parentPath = optionsValue.StaticFilesRootPath;
@@ -53,7 +53,7 @@ namespace Definit.Common.Server.Middleware
 
             if (string.IsNullOrEmpty(_applicationFile))
             {
-                _applicationFile = _matchUrl;
+                _applicationFile = "/index.html";
             }
         }
 
@@ -78,14 +78,17 @@ namespace Definit.Common.Server.Middleware
 
         private async Task ProcessRequest(HttpContext context)
         {
+            PathString matchUrlWithRequestCase = GetMatchUrlWithRequestCase(context);
+            PathString applicationFileUrlWithRequestCase = matchUrlWithRequestCase.Add(_applicationFile);
+
             var filePath = System.IO.Path.GetRelativePath(_parentPath, context.Request.Path);
             var fileInfo = _fileProvider.GetFileInfo(filePath);
             if (!fileInfo.Exists)
             {
-                context.Request.Path = new PathString(_applicationFile);
+                context.Request.Path = new PathString(applicationFileUrlWithRequestCase);
             }
 
-            if (context.Request.Path.Value == _applicationFile)
+            if (context.Request.Path.Value.ToLower() == applicationFileUrlWithRequestCase.Value.ToLower())
             {
                 context.Response.Headers[HeaderNames.CacheControl] = "no-cache, no-store, must-revalidate";
 
@@ -120,6 +123,11 @@ namespace Definit.Common.Server.Middleware
             await _next(context);
         }
 
+        private PathString GetMatchUrlWithRequestCase(HttpContext context)
+        {
+            return new PathString(context.Request.Path.Value.Substring(0, _matchUrl.Value.Length));
+        }
+
         private string ProcessApplicationFile(HttpContext context, string originalContent)
         {
             if (string.IsNullOrEmpty(originalContent))
@@ -142,7 +150,7 @@ namespace Definit.Common.Server.Middleware
 
         protected virtual string GetNewBaseHRef(HttpContext context)
         {
-            var href = _matchUrl.ToString();
+            var href = GetMatchUrlWithRequestCase(context).Value;
             return href;
         }
 
