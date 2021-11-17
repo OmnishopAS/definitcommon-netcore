@@ -41,6 +41,18 @@ namespace Definit.Common.Server.Middleware
                 return;
             }
 
+            //If controller is configured to allow basic auth and basic authorization header is present, 
+            //allow request and let BasicAuthenticationActionFilterAttribute handle authentication
+            var allowBasicAuth = endpoint?.Metadata.OfType<BasicAuthenticationActionFilterAttribute>().Any() ?? false;            
+            if (allowBasicAuth && context.Request.Headers.TryGetValue("Authorization", out var autHeaderValue))
+            {
+                if(autHeaderValue.Any(x=>x.ToLower().StartsWith("basic")))
+                {
+                    await _next(context);
+                    return;
+                }
+            }
+
             //All other endpoints/resources (not marked with AllowAnonymousAttribute) requires authentication
             if (context.User?.Identity == null || !context.User.Identity.IsAuthenticated)
             {
