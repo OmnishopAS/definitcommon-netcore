@@ -1,14 +1,11 @@
 ﻿using System;
 using System.Linq;
-using Microsoft.AspNet.OData;
-using Microsoft.AspNet.OData.Query;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.OData.Edm;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Linq.Expressions;
+using Microsoft.AspNetCore.OData.Query;
 
 namespace Definit.Common.Server.OData
 {
@@ -136,13 +133,6 @@ namespace Definit.Common.Server.OData
             }
 
             return query;
-        }
-
-
-        public override IEdmModel GetModel(Type elementClrType, HttpRequest request, ActionDescriptor actionDescriptor)
-        {
-            var retValue = base.GetModel(elementClrType, request, actionDescriptor);
-            return retValue;
         }
 
         public override void ValidateQuery(HttpRequest request, ODataQueryOptions queryOptions)
