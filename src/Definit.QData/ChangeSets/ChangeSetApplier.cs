@@ -30,176 +30,205 @@ namespace Definit.QData.ChangeSets
             ConvertKeys(typeof(TEntity), changeSet);
 
             TEntity entity;
-            if (changeSet.Operation == ChangeSetOperation.Insert)
-            {
-                entity = new TEntity();
-                ApplyChangeSetEntry(changeSet, entity);
-                _repoContext.AddNewEntity(entity);
-            }
-            else
-            {
-                entity = (TEntity)FindEntity(typeof(TEntity), changeSet);
-                ApplyChangeSetEntry(changeSet, entity);
-            }
 
-            ProcessCompositeChildren(changeSet, entity);
-
-            if (changeSet.Operation == ChangeSetOperation.Delete)
+            switch (changeSet.Operation)
             {
-                _repoContext.DeleteEntity(entity);
+                case ChangeSetOperation.Insert:
+                    entity = new TEntity();
+                    ApplyChangeSetEntryInsert(changeSet, entity);
+                    _repoContext.AddNewEntity(entity);
+                    ProcessCompositeChildren(changeSet, entity);
+                    break;
+                case ChangeSetOperation.Update:
+                    entity = (TEntity)FindEntity(typeof(TEntity), changeSet);
+                    ApplyChangeSetEntryUpdate(changeSet, entity);
+                    ProcessCompositeChildren(changeSet, entity);
+                    break;
+                case ChangeSetOperation.Delete:
+                    entity = (TEntity)FindEntity(typeof(TEntity), changeSet);
+                    ApplyChangeSetEntryDelete(changeSet, entity);
+                    ProcessCompositeChildren(changeSet, entity);
+                    _repoContext.DeleteEntity(entity);
+                    break;
+                case ChangeSetOperation.None:
+                    entity = (TEntity)FindEntity(typeof(TEntity), changeSet);
+                    ApplyChangeSetEntryNone(changeSet, entity);
+                    ProcessCompositeChildren(changeSet, entity);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException("Operation: " + changeSet.Operation + " is not a valid change set operation.");
             }
 
             return entity;
         }
 
         /// <summary>
-        /// Sets properties on entity based on newvalues in ChangeSetEntry.
+        /// Adds ChangeSetEntry to _appliedChangeSetEntries.
+        /// Sets properties on new entity based on newvalues in ChangeSetEntry.
         /// Performs concurrency check of oldvalues exists in ChangeSetEntry.
         /// </summary>
         /// <param name="entry">The changeset entry that will be applied</param>
         /// <param name="entity">The entity whose properties will be updated</param>
-        private void ApplyChangeSetEntry(ChangeSetEntry entry, object entity)
+        private void ApplyChangeSetEntryInsert(ChangeSetEntry entry, object entity)
         {
+            if (entry.Operation != ChangeSetOperation.Insert)
+            {
+                throw new ArgumentException("Operation of entry must be Insert but is: " + entry.Operation);
+            }
+
             _appliedChangeSetEntries.Add(entry, entity);
             PropertyInfo[] properties = entity.GetType().GetProperties();
             var entityKeys = _entityModel.GetKeysForEntity(entity.GetType());
+            ValidateKeys(entityKeys, entry.Keys);
 
-            //TODO: Also check that type, name and index of key matches
-            if (entityKeys.Length != entry.Keys.Count())
-                throw new ChangeSetInvalidException("Invalid Keys array. Expected " + entityKeys.Length + " entries, found " + entry.Keys.Count() + " entries.");
-
-            //Concurrency check (Are OldValues from changeset same as actual values in database?)
-            if (entry.Operation == ChangeSetOperation.Update || entry.Operation == ChangeSetOperation.Delete)
+            if (entry.OldValues != null && entry.OldValues.Any())
             {
-                if (entry.OldValues != null)
-                {
-                    foreach (KeyValuePair<string, object> kvpOldValue in entry.OldValues)
-                    {
-                        PropertyInfo propInfo = properties.Where(p => p.Name == kvpOldValue.Key).FirstOrDefault();
-                        if (propInfo == null)
-                            throw new ChangeSetInvalidException("Key " + kvpOldValue.Key + " in ChangeSetEntry.OldValues not found as property on entity.");
-
-                        if(!AreValuesEqual(propInfo.GetValue(entity), kvpOldValue.Value, propInfo.PropertyType))
-                        {
-                            throw new ChangeSetConcurrencyException("Old changeset value for " + kvpOldValue.Key + " does not match saved db value.");
-                        }
-                    }
-                }
+                throw new ChangeSetInvalidException("OldValues must be empty for operation Insert");
             }
 
-            if(entry.Operation == ChangeSetOperation.Delete)
+            int i = 0;
+            foreach (var entityKey in entityKeys)
             {
-                if(entry.NewValues!=null && entry.NewValues.Any())
+                //Key value(s) may be null for insert of entities with server/database generated key value(s) 
+                if (entry.Keys[i].Value != null)
                 {
-                    throw new ChangeSetInvalidException("NewValues must be empty for operation Delete");
+                    entityKey.PropertyInfo.SetValue(entity, entry.Keys[i].Value);
                 }
+                i++;
             }
 
-            if (entry.Operation==ChangeSetOperation.Insert)
+            if (entry.NewValues == null)
             {
-                if (entry.OldValues != null && entry.OldValues.Any())
-                {
-                    throw new ChangeSetInvalidException("OldValues must be empty for operation Insert");
-                }
-
-                int i = 0;
-                foreach (var entityKey in entityKeys)
-                {
-                    //Key value(s) may be null for insert of entities with server/database generated key value(s) 
-                    if(entry.Keys[i].Value != null)
-                    {
-                        entityKey.PropertyInfo.SetValue(entity, entry.Keys[i].Value);
-                    }
-                    i++;
-                }
+                throw new ChangeSetInvalidException("NewValues can not be null for operations Update or Insert");
             }
 
-            if (entry.Operation == ChangeSetOperation.Update || entry.Operation == ChangeSetOperation.Insert)
+            UpdateValues(properties, entityKeys, entry.NewValues, entity);
+        }
+
+        /// <summary>
+        /// Adds ChangeSetEntry to _appliedChangeSetEntries.
+        /// Updates properties on entity based on newvalues in ChangeSetEntry.
+        /// Performs concurrency check of oldvalues exists in ChangeSetEntry.
+        /// </summary>
+        /// <param name="entry">The changeset entry that will be applied</param>
+        /// <param name="entity">The entity whose properties will be updated</param>
+        private void ApplyChangeSetEntryUpdate(ChangeSetEntry entry, object entity)
+        {
+            if (entry.Operation != ChangeSetOperation.Insert)
             {
-                if(entry.NewValues==null)
-                {
-                    throw new ChangeSetInvalidException("NewValues can not be null for operations Update or Insert");
-                }
-              
-                foreach (KeyValuePair<string, object> kvPair in entry.NewValues)
-                {
-                    var propertyInfo = properties.FirstOrDefault(p => p.Name == kvPair.Key);
-
-                    if(propertyInfo == null)
-                    {
-                        //TODO: Midlertidig løsning fordi Helicon tar med $_visited
-                        continue;
-                        //throw new ChangeSetInvalidException("Property '" + kvPair.Key + "' does not exist on entity " + entity.GetType().FullName);
-                    }
-
-                    if (entityKeys.Any(x => x.Name == propertyInfo.Name))
-                    {
-                        //TODO: Midlertidig løsning fordi Helicon tar med keys i NewValues
-                        continue;
-                        //throw new ChangeSetInvalidException("Property '" + kvPair.Key + "' is a key property and can not be part of NewValues for entity " + entity.GetType().FullName);
-                    }
-
-                    if (!propertyInfo.CanWrite)
-                    {
-                        throw new ChangeSetInvalidException("Property '" + kvPair.Key + "' on entity " + entity.GetType().FullName + " is not writeable");
-                    }
-
-                    //TODO: Check that property is writeable for client 
-                    //      - Readonly: DateCreated / DateLastChange
-                    //      -         : Computed properties (RRPIncVAT)
-                    var value = kvPair.Value;
-                    if (value != null && propertyInfo.PropertyType != value.GetType())
-                        value = ChangeSetHelper.ConvertToType(propertyInfo.PropertyType, value);
-                    propertyInfo.SetValue(entity, value);
-                }
+                throw new ArgumentException("Operation of entry must be Update but is: " + entry.Operation);
             }
+
+            _appliedChangeSetEntries.Add(entry, entity);
+            PropertyInfo[] properties = entity.GetType().GetProperties();
+            var entityKeys = _entityModel.GetKeysForEntity(entity.GetType());
+            ValidateKeys(entityKeys, entry.Keys);
+
+            if (entry.OldValues != null)
+            {
+                ValuesMatchDbCheck(properties, entry.OldValues, entity);
+            }
+
+            if (entry.NewValues == null)
+            {
+                throw new ChangeSetInvalidException("NewValues can not be null for operations Update or Insert");
+            }
+
+            UpdateValues(properties, entityKeys, entry.NewValues, entity);
+        }
+
+        /// <summary>
+        /// Adds ChangeSetEntry to _appliedChangeSetEntries.
+        /// Checks if ChangeSetEntry is a valid entry for delete.
+        /// </summary>
+        /// <param name="entry">The changeset entry that will be applied</param>
+        /// <param name="entity">The entity whose properties will be updated</param>
+        private void ApplyChangeSetEntryDelete(ChangeSetEntry entry, object entity)
+        {
+            if (entry.Operation != ChangeSetOperation.Insert)
+            {
+                throw new ArgumentException("Operation of entry must be Delete but is: " + entry.Operation);
+            }
+
+            _appliedChangeSetEntries.Add(entry, entity);
+            PropertyInfo[] properties = entity.GetType().GetProperties();
+            var entityKeys = _entityModel.GetKeysForEntity(entity.GetType());
+            ValidateKeys(entityKeys, entry.Keys);
+
+            if (entry.OldValues != null)
+            {
+                ValuesMatchDbCheck(properties, entry.OldValues, entity);
+            }
+
+            if (entry.NewValues != null && entry.NewValues.Any())
+            {
+                throw new ChangeSetInvalidException("NewValues must be empty for operation Delete");
+            }
+        }
+
+        /// <summary>
+        /// Adds ChangeSetEntry to _appliedChangeSetEntries.
+        /// Validates keys in ChangeSetEntry.
+        /// </summary>
+        /// <param name="entry">The changeset entry that will be applied</param>
+        /// <param name="entity">The entity whose properties will be updated</param>
+        private void ApplyChangeSetEntryNone(ChangeSetEntry entry, object entity)
+        {
+            _appliedChangeSetEntries.Add(entry, entity);
+            var entityKeys = _entityModel.GetKeysForEntity(entity.GetType());
+            ValidateKeys(entityKeys, entry.Keys);
         }
 
         private void ProcessCompositeChildren(ChangeSetEntry changeSet, object entity)
         {
-            if (changeSet.CompositeCollections != null)
+            if (changeSet.CompositeCollections == null) { return; }
+
+            foreach (var compositeCollection in changeSet.CompositeCollections)
             {
-                foreach (var compositeCollection in changeSet.CompositeCollections)
+                var entryList = compositeCollection.Value;
+
+                //TODO: Check that this is an actual allowed composition (from composite attribute or similar)
+                PropertyInfo navEntityPropInfo = entity.GetType().GetRuntimeProperty(compositeCollection.Key);
+                IList navEntities = (IList)navEntityPropInfo.GetValue(entity);
+                Type entityType = navEntityPropInfo.PropertyType.GenericTypeArguments[0];
+
+                if (navEntities == null)
                 {
-                    var entryList = compositeCollection.Value;
+                    Type genericType = typeof(List<>).MakeGenericType(entityType);
+                    navEntities = (IList)Activator.CreateInstance(genericType);
+                    navEntityPropInfo.SetValue(entity, navEntities);
+                }
 
-                    //TODO: Check that this is an actual allowed composition (from composite attribute or similar)
-                    PropertyInfo navEntityPropInfo = entity.GetType().GetRuntimeProperty(compositeCollection.Key);
-                    IList navEntities = (IList)navEntityPropInfo.GetValue(entity);
-                    Type entityType = navEntityPropInfo.PropertyType.GenericTypeArguments[0];
+                foreach (ChangeSetEntry entry in entryList)
+                {
+                    ConvertKeys(entityType, entry);
 
-                    if (navEntities == null)
+                    if (entry.Operation == ChangeSetOperation.Insert)
                     {
-                        Type genericType = typeof(List<>).MakeGenericType(entityType);
-                        navEntities = (IList)Activator.CreateInstance(genericType);
-                        navEntityPropInfo.SetValue(entity, navEntities);
+                        var newNavEntity = Activator.CreateInstance(entityType);
+                        ApplyChangeSetEntryInsert(entry, newNavEntity);
+                        ProcessCompositeChildren(entry, newNavEntity);
+                        navEntities.Add(newNavEntity);
                     }
-
-                    foreach (ChangeSetEntry entry in entryList)
+                    else if (entry.Operation == ChangeSetOperation.Update)
                     {
-                        ConvertKeys(entityType, entry);
-
-                        if (entry.Operation == ChangeSetOperation.Insert)
-                        {
-                            var newNavEntity = Activator.CreateInstance(entityType);
-                            ApplyChangeSetEntry(entry, newNavEntity);
-                            ProcessCompositeChildren(entry, newNavEntity);
-                            navEntities.Add(newNavEntity);
-                        }
-                        else if (entry.Operation == ChangeSetOperation.Update || entry.Operation == ChangeSetOperation.None)
-                        {
-                            object navEntity = FindEntity(entityType, entry);
-                            ApplyChangeSetEntry(entry, navEntity);
-                            ProcessCompositeChildren(entry, navEntity);
-                        }
-                        else if (entry.Operation == ChangeSetOperation.Delete)
-                        {
-                            object navEntity = FindEntity(entityType, entry);
-                            ApplyChangeSetEntry(entry, navEntity);
-                            ProcessCompositeChildren(entry, navEntity);
-                            _repoContext.DeleteEntity(navEntity);
-                            navEntities.Remove(navEntity);
-                        }
+                        object navEntity = FindEntity(entityType, entry);
+                        ApplyChangeSetEntryUpdate(entry, navEntity);
+                        ProcessCompositeChildren(entry, navEntity);
+                    }
+                    else if (entry.Operation == ChangeSetOperation.Delete)
+                    {
+                        object navEntity = FindEntity(entityType, entry);
+                        ApplyChangeSetEntryDelete(entry, navEntity);
+                        ProcessCompositeChildren(entry, navEntity);
+                        _repoContext.DeleteEntity(navEntity);
+                        navEntities.Remove(navEntity);
+                    }
+                    else if (entry.Operation == ChangeSetOperation.None)
+                    {
+                        object navEntity = FindEntity(entityType, entry);
+                        ApplyChangeSetEntryNone(entry, navEntity);
+                        ProcessCompositeChildren(entry, navEntity);
                     }
                 }
 
@@ -235,6 +264,48 @@ namespace Definit.QData.ChangeSets
             return entity;
         }
 
+        private void ValidateKeys(EntityKey[] entityKeys, IList<KeyValuePair<string, object>> entryKeys)
+        {
+            //TODO: Also check that type, name and index of key matches
+            if (entityKeys.Length != entryKeys.Count())
+                throw new ChangeSetInvalidException("Invalid Keys array. Expected " + entityKeys.Length + " entries, found " + entryKeys.Count() + " entries.");
+        }
+
+        private void UpdateValues(PropertyInfo[] properties, EntityKey[] entityKeys, IList<KeyValuePair<string, object>> values, object entity)
+        {
+            foreach (KeyValuePair<string, object> kvPair in values)
+            {
+                var propertyInfo = properties.FirstOrDefault(p => p.Name == kvPair.Key);
+
+                if (propertyInfo == null)
+                {
+                    //TODO: Midlertidig løsning fordi Helicon tar med $_visited
+                    continue;
+                    //throw new ChangeSetInvalidException("Property '" + kvPair.Key + "' does not exist on entity " + entity.GetType().FullName);
+                }
+
+                if (entityKeys.Any(x => x.Name == propertyInfo.Name))
+                {
+                    //TODO: Midlertidig løsning fordi Helicon tar med keys i NewValues
+                    continue;
+                    //throw new ChangeSetInvalidException("Property '" + kvPair.Key + "' is a key property and can not be part of NewValues for entity " + entity.GetType().FullName);
+                }
+
+                if (!propertyInfo.CanWrite)
+                {
+                    throw new ChangeSetInvalidException("Property '" + kvPair.Key + "' on entity " + entity.GetType().FullName + " is not writeable");
+                }
+
+                //TODO: Check that property is writeable for client 
+                //      - Readonly: DateCreated / DateLastChange
+                //      -         : Computed properties (RRPIncVAT)
+                var value = kvPair.Value;
+                if (value != null && propertyInfo.PropertyType != value.GetType())
+                    value = ChangeSetHelper.ConvertToType(propertyInfo.PropertyType, value);
+                propertyInfo.SetValue(entity, value);
+            }
+        }
+
         private bool AreValuesEqual(object propertyValue, object changeSetValue, Type propertyType)
         {
             if (propertyValue == null)
@@ -248,6 +319,21 @@ namespace Definit.QData.ChangeSets
             }
 
             return ChangeSetHelper.ConvertToType(propertyType, changeSetValue).Equals(propertyValue);
+        }
+
+        private void ValuesMatchDbCheck(PropertyInfo[] properties, IList<KeyValuePair<string, object>> values, object entity)
+        {
+            foreach (KeyValuePair<string, object> kvpValue in values)
+            {
+                PropertyInfo propInfo = properties.Where(p => p.Name == kvpValue.Key).FirstOrDefault();
+                if (propInfo == null)
+                    throw new ChangeSetInvalidException("Key " + kvpValue.Key + " in ChangeSetEntry.OldValues not found as property on entity.");
+
+                if (!AreValuesEqual(propInfo.GetValue(entity), kvpValue.Value, propInfo.PropertyType))
+                {
+                    throw new ChangeSetConcurrencyException("Old changeset value for " + kvpValue.Key + " does not match saved db value.");
+                }
+            }
         }
     }
 }
