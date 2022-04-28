@@ -114,7 +114,7 @@ namespace Definit.QData.ChangeSets
         /// <param name="entity">The entity whose properties will be updated</param>
         private void ApplyChangeSetEntryUpdate(ChangeSetEntry entry, object entity)
         {
-            if (entry.Operation != ChangeSetOperation.Insert)
+            if (entry.Operation != ChangeSetOperation.Update)
             {
                 throw new ArgumentException("Operation of entry must be Update but is: " + entry.Operation);
             }
@@ -145,7 +145,7 @@ namespace Definit.QData.ChangeSets
         /// <param name="entity">The entity whose properties will be updated</param>
         private void ApplyChangeSetEntryDelete(ChangeSetEntry entry, object entity)
         {
-            if (entry.Operation != ChangeSetOperation.Insert)
+            if (entry.Operation != ChangeSetOperation.Delete)
             {
                 throw new ArgumentException("Operation of entry must be Delete but is: " + entry.Operation);
             }
@@ -174,6 +174,11 @@ namespace Definit.QData.ChangeSets
         /// <param name="entity">The entity whose properties will be updated</param>
         private void ApplyChangeSetEntryNone(ChangeSetEntry entry, object entity)
         {
+            if (entry.Operation != ChangeSetOperation.None)
+            {
+                throw new ArgumentException("Operation of entry must be None but is: " + entry.Operation);
+            }
+
             _appliedChangeSetEntries.Add(entry, entity);
             var entityKeys = _entityModel.GetKeysForEntity(entity.GetType());
             ValidateKeys(entityKeys, entry.Keys);
