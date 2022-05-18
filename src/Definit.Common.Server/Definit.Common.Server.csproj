@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
   </PropertyGroup>
   
   <ItemGroup>
@@ -9,10 +9,9 @@
   </ItemGroup>
     
   <ItemGroup>
-    <PackageReference Include="System.Security.Principal" Version="4.3.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Hosting.WindowsServices" Version="5.0.8" />
-    <PackageReference Include="Microsoft.AspNetCore.OData" Version="8.0.8" />
-    <PackageReference Include="NLog" Version="4.7.10" />
+    <PackageReference Include="Microsoft.AspNetCore.OData-kakone2" Version="1.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Hosting.WindowsServices" Version="6.0.4" />
+    <PackageReference Include="NLog" Version="4.7.15" />
   </ItemGroup>
 
   <ItemGroup>
