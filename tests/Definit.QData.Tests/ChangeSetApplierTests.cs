@@ -82,23 +82,6 @@ namespace Definit.QData.Tests
         }
 
         [Fact]
-        public void Apply_Insert_WithExistingEntity_ThrowsChangeSetException()
-        {
-            var stubChangeSetContext = new Mock<IChangeSetContext>();
-            var stubQDataEntityModel = new Mock<IQDataEntityModel>();
-
-            var changeSetApplier = new ChangeSetApplier<TestEntity>(stubChangeSetContext.Object, stubQDataEntityModel.Object);
-            var testChangeSet = new ChangeSetEntry()
-            {
-                Operation = ChangeSetOperation.Insert,
-            };
-
-            void applyChangeSet() => changeSetApplier.ApplyChangeSet(testChangeSet);
-
-            Assert.Throws<ChangeSetInvalidException>(applyChangeSet);
-        }
-
-        [Fact]
         public void Apply_Insert_WithoutNewValues_ThrowsChangeSetInvalidException()
         {
             var stubChangeSetContext = new Mock<IChangeSetContext>();
