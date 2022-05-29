@@ -47,21 +47,33 @@ namespace Definit.Common.DAL
 
         public static DataTable GetDataTable(DbConnection connection, string sql)
         {
-            connection.Open();
+            var initialState = connection.State;
+            if(initialState!=ConnectionState.Open)
+            {
+                connection.Open();
+            }
+
             try
             {
-                using (var command = (SqlCommand)connection.CreateCommand())
+                using (var cmd = connection.CreateCommand())
                 {
-                    command.CommandText = sql;
+                    cmd.CommandText = sql;
+                    cmd.Connection = connection;
                     var dt = new DataTable();
-                    var da = new SqlDataAdapter(command);
-                    da.Fill(dt);
-                    return dt;
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        dt.Load(reader);
+                        return dt;
+                    }
                 }
+
             }
             finally
             {
-                connection.Close();
+                if(initialState==ConnectionState.Closed)
+                {
+                    connection.Close();
+                }
             }
         }
     }
