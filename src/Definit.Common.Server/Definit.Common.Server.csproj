@@ -1,7 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net7.0</TargetFramework>
   </PropertyGroup>
   
   <ItemGroup>
@@ -10,7 +9,7 @@
     
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OData-kakone2" Version="1.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Hosting.WindowsServices" Version="6.0.5" />
+    <PackageReference Include="Microsoft.AspNetCore.Hosting.WindowsServices" Version="7.0.13" />
     <PackageReference Include="NLog" Version="4.7.15" />
   </ItemGroup>
 
