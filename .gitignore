@@ -34,3 +34,8 @@ packages/
 *.lock.json
 /deploy/artifacts
 
+.idea/.idea.Definit.Common/.idea/.name
+.idea/.idea.Definit.Common/.idea/indexLayout.xml
+.idea/.idea.Definit.Common/.idea/projectSettingsUpdater.xml
+.idea/.idea.Definit.Common/.idea/vcs.xml
+.idea/.idea.Definit.Common/.idea/workspace.xml
