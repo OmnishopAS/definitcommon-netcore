@@ -29,7 +29,7 @@ namespace Definit.Common.Server
             filterContext.Result = new UnauthorizedObjectResult("Access denied. User is not authenticated.");
             var res = filterContext.HttpContext.Response;
             res.StatusCode = 401;
-            res.Headers.Add("WWW-Authenticate", String.Format("Basic realm=\"{0}\"", BasicRealm ?? "BasicRealm"));
+            res.Headers["WWW-Authenticate"]= String.Format("Basic realm=\"{0}\"", BasicRealm ?? "BasicRealm");
         }
 
         protected abstract bool ValidateCredentials(ActionExecutingContext filterContext, string username, string password);

@@ -39,7 +39,7 @@ namespace Definit.Common.Server.Response
                 FileName = Path.GetFileName(_fileName),
                 Inline = false  // false = prompt the user for downloading;  true = browser to try to show the file inline
             };
-            context.HttpContext.Response.Headers.Add("Content-Disposition", cd.ToString());
+            context.HttpContext.Response.Headers["Content-Disposition"]= cd.ToString();
         }
 
         private void AfterExecute(ActionContext context)
