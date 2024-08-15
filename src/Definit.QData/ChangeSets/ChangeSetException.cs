@@ -21,9 +21,6 @@ namespace Definit.QData.ChangeSets
         {
         }
 
-        protected ChangeSetException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
-        }
     }
 
     [Serializable]
@@ -41,9 +38,6 @@ namespace Definit.QData.ChangeSets
         {
         }
 
-        protected ChangeSetInvalidException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
-        }
     }
 
     [Serializable]
@@ -61,8 +55,5 @@ namespace Definit.QData.ChangeSets
         {
         }
 
-        protected ChangeSetConcurrencyException(SerializationInfo info, StreamingContext context) : base(info, context)
-        {
-        }
     }
 }
